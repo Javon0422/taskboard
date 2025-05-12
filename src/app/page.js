@@ -4,9 +4,9 @@
 // 從 components 資料夾引入 TaskList 元件
 import TaskList from "@/components/TaskList";
 // 引入 Next.js 的 Image 元件，用於優化圖片載入
-import Image from "next/image";
+import Link from "next/link";
 // 從 React 引入 useState hook，用於管理狀態
-import { useState } from "react";
+import { useState,useEffect } from "react";
 
 // 定義首頁元件
 export default function Home() {
@@ -19,23 +19,52 @@ export default function Home() {
   // setNewTask: 用於更新 newTask 的函數
   const [newTask, setNewTask] = useState('');
 
+  const [nextid, setNextId] = useState(1);
+
+  useEffect(() => {
+    // 取得 localStorage 中的待辦事項
+    const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    // 更新 tasks 狀態
+    setTasks(savedTasks);
+    const maxid = savedTasks.reduce((max, task) => Math.max(max, task.id), 0);
+    setNextId(maxid + 1);
+  }  , []);
+
   // 新增待辦事項的函數
   const addTask = () => {
     // 在新增前，先在控制台記錄目前的待辦事項
     console.log("Before", tasks);
+    console.log("Newtask", newTask);
+
+    const newTaskObj = {
+      id: nextid,
+      title: newTask,
+      description: "",
+    };
+  
     // 使用展開運算符 (...) 建立新陣列，並加入新的待辦事項
-    const updatedTasks = [...tasks, newTask];
+    const updatedTasks = [...tasks, newTaskObj];
     // 更新 tasks 狀態
     setTasks(updatedTasks);
     // 在新增後，記錄更新後的待辦事項
     console.log("After", updatedTasks);
+
+    setNewTask('');
+
+    setNextId(nextid + 1);
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
   };
 
+  const handleDelete = (index) => {
+    const newTasks = tasks.filter((_, i) => i !== index);
+    setTasks(newTasks);
+    localStorage.setItem("tasks", JSON.stringify(newTasks));
+  }
   // 渲染使用者介面
   return (
     // main 元素包含整個應用程式的主要內容
     // p-4: Tailwind CSS 類別，設定內邊距為 4 單位
-    <main className="p-4">
+    <main className="p-4 max-w-md mx-auto">
       {/* 標題區塊 */}
       {/* text-2xl: 文字大小, font-bold: 粗體, mb-4: 下方邊距 */}
       <h1 className="text-2xl font-bold mb-4">Task Board</h1>
@@ -65,7 +94,7 @@ export default function Home() {
       
       {/* 待辦事項列表 */}
       {/* 將 tasks 陣列傳遞給 TaskList 元件進行渲染 */}
-      <TaskList tasks={tasks} />
+      <TaskList tasks={tasks} onDelete={handleDelete} />
     </main>    
   );
 }
